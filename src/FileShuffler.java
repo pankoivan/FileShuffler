@@ -10,34 +10,57 @@ import java.util.*;
 public class FileShuffler {
 
     private final SettingsParser settingsParser;
+
     private final List<File> files;
+
     private final String formatPattern;
 
-    public FileShuffler(String file) throws FileShufflingException {
+    public FileShuffler() throws FileShufflingException, SettingsParsingException {
+        this(new SettingsParser());
+    }
+
+    public FileShuffler(SettingsParser settingsParser) throws FileShufflingException {
         try {
 
-            settingsParser = new SettingsParser(file);
+            this.settingsParser = settingsParser;
             files = Arrays.asList(Objects.requireNonNull(new File(settingsParser.getSourceDir()).listFiles()));
             formatPattern = "%0" + String.valueOf(files.size()).length() + "d";
 
-        } catch (SettingsParsingException | NullPointerException e) {
+        } catch (NullPointerException e) {
             throw new FileShufflingException("File shuffler cannot be created because of errors", e);
         }
     }
 
-    private void createDirectory() throws DirectoryCreationException {
+    public void shuffleFiles() throws FileShufflingException {
+        try {
+            createDestDirectory();
+            shuffle();
+            List<String> validatedNames = validateNames();
 
-        if (!settingsParser.getSourceDir().equalsIgnoreCase(settingsParser.getDestDir()) &&
-                !new File(settingsParser.getDestDir()).mkdir()) {
+            for (int i = 0; i < files.size(); ++i) {
 
-            throw new DirectoryCreationException("Error at creation destination directory \""
-                    + settingsParser.getDestDir() + "\"");
+                String sourceName = files.get(i).getName();
+                String destName = String.format(formatPattern, i + 1) + " " + validatedNames.get(i);
+
+                Files.move(Paths.get(settingsParser.getSourceDir() + "\\" + sourceName),
+                        Paths.get(settingsParser.getDestDir() + "\\" + destName), StandardCopyOption.REPLACE_EXISTING);
+
+                System.out.println(sourceName + "   ----->   " + destName);
+            }
+
+        } catch (DirectoryCreationException | IOException e) {
+            throw new FileShufflingException("File shuffler cannot shuffle files because of errors", e);
         }
     }
 
-    private void shuffle() {
-        for (int i = 0; i < settingsParser.getShufflesCount(); ++i) {
-            Collections.shuffle(files);
+    private void createDestDirectory() throws DirectoryCreationException {
+
+        if (!settingsParser.getSourceDir().equalsIgnoreCase(settingsParser.getDestDir())
+                && !Files.exists(Paths.get(settingsParser.getDestDir()))
+                && !new File(settingsParser.getDestDir()).mkdir()) {
+
+            throw new DirectoryCreationException("Error at creation destination directory \""
+                    + settingsParser.getDestDir() + "\"");
         }
     }
 
@@ -66,26 +89,10 @@ public class FileShuffler {
         return validatedNames;
     }
 
-    public void shuffleFiles() throws FileShufflingException {
-        try {
-
-            createDirectory();
-            shuffle();
-            List<String> validatedNames = validateNames();
-
-            for (int i = 0; i < files.size(); ++i) {
-
-                String sourceName = files.get(i).getName();
-                String destName = String.format(formatPattern, i + 1) + " " + validatedNames.get(i);
-
-                Files.move(Paths.get(settingsParser.getSourceDir() + "\\" + sourceName),
-                        Paths.get(settingsParser.getDestDir() + "\\" + destName), StandardCopyOption.REPLACE_EXISTING);
-
-                System.out.println(sourceName + "   ----->   " + destName);
-            }
-
-        } catch (DirectoryCreationException | IOException e) {
-            throw new FileShufflingException("File shuffler cannot shuffle files because of errors", e);
+    private void shuffle() {
+        for (int i = 0; i < settingsParser.getShufflesCount(); ++i) {
+            Collections.shuffle(files);
         }
     }
+
 }
