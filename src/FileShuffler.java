@@ -9,15 +9,15 @@ import java.util.*;
 
 public class FileShuffler {
 
-    private final Settings settings;
+    private final SettingsParser settingsParser;
     private final List<File> files;
     private final String formatPattern;
 
     public FileShuffler(String file) throws FileShufflingException {
         try {
 
-            settings = new Settings(file);
-            files = Arrays.asList(Objects.requireNonNull(new File(settings.getSourceDir()).listFiles()));
+            settingsParser = new SettingsParser(file);
+            files = Arrays.asList(Objects.requireNonNull(new File(settingsParser.getSourceDir()).listFiles()));
             formatPattern = "%0" + String.valueOf(files.size()).length() + "d";
 
         } catch (SettingsParsingException | NullPointerException e) {
@@ -27,16 +27,16 @@ public class FileShuffler {
 
     private void createDirectory() throws DirectoryCreationException {
 
-        if (!settings.getSourceDir().equalsIgnoreCase(settings.getDestDir()) &&
-                !new File(settings.getDestDir()).mkdir()) {
+        if (!settingsParser.getSourceDir().equalsIgnoreCase(settingsParser.getDestDir()) &&
+                !new File(settingsParser.getDestDir()).mkdir()) {
 
             throw new DirectoryCreationException("Error at creation destination directory \""
-                    + settings.getDestDir() + "\"");
+                    + settingsParser.getDestDir() + "\"");
         }
     }
 
     private void shuffle() {
-        for (int i = 0; i < settings.getNumberOfShuffles(); ++i) {
+        for (int i = 0; i < settingsParser.getShufflesCount(); ++i) {
             Collections.shuffle(files);
         }
     }
@@ -78,8 +78,8 @@ public class FileShuffler {
                 String sourceName = files.get(i).getName();
                 String destName = String.format(formatPattern, i + 1) + " " + validatedNames.get(i);
 
-                Files.move(Paths.get(settings.getSourceDir() + "\\" + sourceName),
-                        Paths.get(settings.getDestDir() + "\\" + destName), StandardCopyOption.REPLACE_EXISTING);
+                Files.move(Paths.get(settingsParser.getSourceDir() + "\\" + sourceName),
+                        Paths.get(settingsParser.getDestDir() + "\\" + destName), StandardCopyOption.REPLACE_EXISTING);
 
                 System.out.println(sourceName + "   ----->   " + destName);
             }
