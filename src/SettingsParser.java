@@ -3,7 +3,6 @@ import exceptions.SettingsParsingException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -43,7 +42,7 @@ public class SettingsParser {
 
         } catch (IOException | NullPointerException | NumberFormatException e) {
             throw new SettingsParsingException("Settings cannot be created because of errors in settings file " +
-                    "\"" + SETTINGS + "\"", e);
+                    "\"" + path + "\"", e);
         }
     }
 

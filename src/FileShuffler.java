@@ -81,9 +81,9 @@ public class FileShuffler {
             File current = iterator.next();
             if (predicate.test(current)) {
 
-                System.out.println(current.getName() + "   ----->   DELETED");
                 Files.delete(current.toPath());
                 iterator.remove();
+                System.out.println(current.getName() + "   ----->   DELETED");
             }
         }
     }
