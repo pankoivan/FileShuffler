@@ -21,39 +21,28 @@ public class FileShuffler {
 
     public FileShuffler(SettingsParser settingsParser) throws FileShufflingException {
         try {
-
             this.settingsParser = settingsParser;
-            files = Arrays.asList(Objects.requireNonNull(new File(settingsParser.getSourceDir()).listFiles()));
+            files = new ArrayList<>(Arrays.asList(Objects.requireNonNull(
+                    new File(this.settingsParser.getSourceDir()).listFiles())));
             formatPattern = "%0" + String.valueOf(files.size()).length() + "d";
-
+            
         } catch (NullPointerException e) {
             throw new FileShufflingException("File shuffler cannot be created because of errors", e);
         }
     }
 
-    public void shuffleFiles() throws FileShufflingException {
+    public void shuffle() throws FileShufflingException {
         try {
-            createDestDirectory();
-            shuffle();
-            List<String> validatedNames = validateNames();
-
-            for (int i = 0; i < files.size(); ++i) {
-
-                String sourceName = files.get(i).getName();
-                String destName = String.format(formatPattern, i + 1) + " " + validatedNames.get(i);
-
-                Files.move(Paths.get(settingsParser.getSourceDir() + "\\" + sourceName),
-                        Paths.get(settingsParser.getDestDir() + "\\" + destName), StandardCopyOption.REPLACE_EXISTING);
-
-                System.out.println(sourceName + "   ----->   " + destName);
-            }
-
+            createDestDirectoryIfNecessary();
+            excludeUnnecessary();
+            cyclicShuffle();
+            moveOrRename();
         } catch (DirectoryCreationException | IOException e) {
             throw new FileShufflingException("File shuffler cannot shuffle files because of errors", e);
         }
     }
 
-    private void createDestDirectory() throws DirectoryCreationException {
+    private void createDestDirectoryIfNecessary() throws DirectoryCreationException {
 
         if (!settingsParser.getSourceDir().equalsIgnoreCase(settingsParser.getDestDir())
                 && !Files.exists(Paths.get(settingsParser.getDestDir()))
@@ -64,35 +53,52 @@ public class FileShuffler {
         }
     }
 
-    private List<String> validateNames() {
-
-        List<String> validatedNames = new ArrayList<>();
-        for (int i = 0; i < files.size(); ++i) {
-
-            String name = files.get(i).getName();
-            StringBuilder stringBuilder = new StringBuilder(name);
-            String extension = name.substring(name.lastIndexOf("."));
-
-            while (!Character.isAlphabetic(stringBuilder.charAt(0))) {
-                stringBuilder.deleteCharAt(0);
-            }
-
-            if (stringBuilder.toString().equalsIgnoreCase(extension)) {
-                stringBuilder = new StringBuilder("Undefined file " + (i + 1) + "." + extension);
-            }
-
-            stringBuilder.setCharAt(0, Character.toUpperCase(stringBuilder.charAt(0)));
-
-            validatedNames.add(stringBuilder.toString());
-        }
-
-        return validatedNames;
+    private void excludeUnnecessary() {
+        removeAll();
     }
 
-    private void shuffle() {
+    private void removeAll() {
+        files.removeIf(file -> settingsParser.getExcludedFormats().contains(getExtension(file)));
+    }
+
+    private void cyclicShuffle() {
         for (int i = 0; i < settingsParser.getShufflesCount(); ++i) {
             Collections.shuffle(files);
         }
+    }
+
+    private void moveOrRename() throws IOException {
+        for (int i = 0; i < files.size(); ++i) {
+
+            String sourceName = files.get(i).getName();
+            String destName = String.format(formatPattern, i + 1) + " " + originalNameOrUndefined(files.get(i));
+
+            Files.move(Paths.get(settingsParser.getSourceDir() + "\\" + sourceName),
+                    Paths.get(settingsParser.getDestDir() + "\\" + destName), StandardCopyOption.REPLACE_EXISTING);
+
+            System.out.println(sourceName + "   ----->   " + destName);
+        }
+    }
+
+    private String originalNameOrUndefined(File file) {
+
+        StringBuilder stringBuilder = new StringBuilder(file.getName());
+        String extension = getExtension(file);
+
+        while (!Character.isAlphabetic(stringBuilder.charAt(0))) {
+            stringBuilder.deleteCharAt(0);
+        }
+
+        if (stringBuilder.toString().equalsIgnoreCase(extension)) {
+            stringBuilder = new StringBuilder("Undefined file " + UUID.randomUUID() + "." + extension);
+        }
+
+        return stringBuilder.toString();
+    }
+
+    private String getExtension(File file) {
+        String name = file.getName();
+        return name.substring(name.lastIndexOf(".") + 1);
     }
 
 }
