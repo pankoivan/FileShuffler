@@ -1,0 +1,91 @@
+import exceptions.DirectoryCreationException;
+import exceptions.FileShufflerException;
+import exceptions.SettingsException;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.*;
+
+public class FileShuffler {
+
+    private final Settings settings;
+    private final List<File> files;
+    private final String formatPattern;
+
+    public FileShuffler(String file) throws FileShufflerException {
+        try {
+
+            settings = new Settings(file);
+            files = Arrays.asList(Objects.requireNonNull(new File(settings.getSourceDir()).listFiles()));
+            formatPattern = "%0" + String.valueOf(files.size()).length() + "d";
+
+        } catch (SettingsException | NullPointerException e) {
+            throw new FileShufflerException("File shuffler cannot be created because of errors", e);
+        }
+    }
+
+    private void createDirectory() throws DirectoryCreationException {
+
+        if (!settings.getSourceDir().equalsIgnoreCase(settings.getDestDir()) &&
+                !new File(settings.getDestDir()).mkdir()) {
+
+            throw new DirectoryCreationException("Error at creation destination directory \""
+                    + settings.getDestDir() + "\"");
+        }
+    }
+
+    private void shuffle() {
+        for (int i = 0; i < settings.getNumberOfShuffles(); ++i) {
+            Collections.shuffle(files);
+        }
+    }
+
+    private List<String> validateNames() {
+
+        List<String> validatedNames = new ArrayList<>();
+        for (int i = 0; i < files.size(); ++i) {
+
+            String name = files.get(i).getName();
+            StringBuilder stringBuilder = new StringBuilder(name);
+            String extension = name.substring(name.lastIndexOf("."));
+
+            while (!Character.isAlphabetic(stringBuilder.charAt(0))) {
+                stringBuilder.deleteCharAt(0);
+            }
+
+            if (stringBuilder.toString().equalsIgnoreCase(extension)) {
+                stringBuilder = new StringBuilder("Undefined file " + (i + 1) + "." + extension);
+            }
+
+            stringBuilder.setCharAt(0, Character.toUpperCase(stringBuilder.charAt(0)));
+
+            validatedNames.add(stringBuilder.toString());
+        }
+
+        return validatedNames;
+    }
+
+    public void shuffleFiles() throws FileShufflerException {
+        try {
+
+            createDirectory();
+            shuffle();
+            List<String> validatedNames = validateNames();
+
+            for (int i = 0; i < files.size(); ++i) {
+
+                String sourceName = files.get(i).getName();
+                String destName = String.format(formatPattern, i + 1) + " " + validatedNames.get(i);
+
+                Files.move(Paths.get(settings.getSourceDir() + "\\" + sourceName),
+                        Paths.get(settings.getDestDir() + "\\" + destName), StandardCopyOption.REPLACE_EXISTING);
+
+                System.out.println(sourceName + "   ----->   " + destName);
+            }
+
+        } catch (DirectoryCreationException | IOException e) {
+            throw new FileShufflerException("File shuffler cannot shuffle files because of errors", e);
+        }
+    }
+}
