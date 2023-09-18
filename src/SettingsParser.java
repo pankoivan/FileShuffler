@@ -61,6 +61,7 @@ public class SettingsParser {
     private List<String> getProcessedExtensions(String line) {
         return Stream.of(line.split(" "))
                 .filter(format -> !format.isBlank())
+                .map(String::toLowerCase)
                 .toList();
     }
 

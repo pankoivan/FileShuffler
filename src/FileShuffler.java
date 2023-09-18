@@ -66,9 +66,9 @@ public class FileShuffler {
     private void removeIfNecessary() throws IOException {
         if (settingsParser.isWithExtensions()) {
             if (settingsParser.isExcluded()) {
-                remove(file -> settingsParser.getExtensions().contains(getExtension(file)));
+                remove(file -> settingsParser.getExtensions().contains(getExtensionInLowerCase(file)));
             } else {
-                remove(file -> !settingsParser.getExtensions().contains(getExtension(file)));
+                remove(file -> !settingsParser.getExtensions().contains(getExtensionInLowerCase(file)));
             }
         }
     }
@@ -110,7 +110,7 @@ public class FileShuffler {
     private String originalNameOrUndefined(File file) {
 
         StringBuilder stringBuilder = new StringBuilder(file.getName());
-        String extension = getExtension(file);
+        String extension = getExtensionInLowerCase(file);
 
         while (!Character.isAlphabetic(stringBuilder.charAt(0))) {
             stringBuilder.deleteCharAt(0);
@@ -123,9 +123,9 @@ public class FileShuffler {
         return stringBuilder.toString();
     }
 
-    private String getExtension(File file) {
+    private String getExtensionInLowerCase(File file) {
         String name = file.getName();
-        return name.substring(name.lastIndexOf(".") + 1);
+        return name.substring(name.lastIndexOf(".") + 1).toLowerCase();
     }
 
 }
