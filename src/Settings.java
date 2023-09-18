@@ -1,4 +1,4 @@
-import exceptions.SettingsException;
+import exceptions.SettingsParsingException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,7 +11,7 @@ public class Settings {
     private final String destDir;
     private final int numberOfShuffles;
 
-    public Settings(String file) throws SettingsException {
+    public Settings(String file) throws SettingsParsingException {
         try {
 
             List<String> lines = Files.readAllLines(Paths.get(file));
@@ -20,7 +20,7 @@ public class Settings {
             numberOfShuffles = Integer.parseInt(lines.get(2));
 
         } catch (IOException | NullPointerException | NumberFormatException e) {
-            throw new SettingsException("Settings cannot be created because of errors in settings file " +
+            throw new SettingsParsingException("Settings cannot be created because of errors in settings file " +
                     "\"Settings.txt\"", e);
         }
     }

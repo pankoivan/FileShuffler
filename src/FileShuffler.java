@@ -1,6 +1,6 @@
 import exceptions.DirectoryCreationException;
-import exceptions.FileShufflerException;
-import exceptions.SettingsException;
+import exceptions.FileShufflingException;
+import exceptions.SettingsParsingException;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,15 +13,15 @@ public class FileShuffler {
     private final List<File> files;
     private final String formatPattern;
 
-    public FileShuffler(String file) throws FileShufflerException {
+    public FileShuffler(String file) throws FileShufflingException {
         try {
 
             settings = new Settings(file);
             files = Arrays.asList(Objects.requireNonNull(new File(settings.getSourceDir()).listFiles()));
             formatPattern = "%0" + String.valueOf(files.size()).length() + "d";
 
-        } catch (SettingsException | NullPointerException e) {
-            throw new FileShufflerException("File shuffler cannot be created because of errors", e);
+        } catch (SettingsParsingException | NullPointerException e) {
+            throw new FileShufflingException("File shuffler cannot be created because of errors", e);
         }
     }
 
@@ -66,7 +66,7 @@ public class FileShuffler {
         return validatedNames;
     }
 
-    public void shuffleFiles() throws FileShufflerException {
+    public void shuffleFiles() throws FileShufflingException {
         try {
 
             createDirectory();
@@ -85,7 +85,7 @@ public class FileShuffler {
             }
 
         } catch (DirectoryCreationException | IOException e) {
-            throw new FileShufflerException("File shuffler cannot shuffle files because of errors", e);
+            throw new FileShufflingException("File shuffler cannot shuffle files because of errors", e);
         }
     }
 }

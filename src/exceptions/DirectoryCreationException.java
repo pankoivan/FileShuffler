@@ -1,6 +1,7 @@
 package exceptions;
 
 public class DirectoryCreationException extends Exception {
+
     public DirectoryCreationException() {
         super();
     }
@@ -8,4 +9,9 @@ public class DirectoryCreationException extends Exception {
     public DirectoryCreationException(String msg) {
         super(msg);
     }
+
+    public DirectoryCreationException(String msg, Throwable throwable) {
+        super(msg, throwable);
+    }
+
 }

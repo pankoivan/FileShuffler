@@ -1,4 +1,4 @@
-import exceptions.FileShufflerException;
+import exceptions.FileShufflingException;
 
 public class Main {
 
@@ -6,7 +6,7 @@ public class Main {
         try {
             FileShuffler fileShuffler = new FileShuffler("Settings.txt");
             fileShuffler.shuffleFiles();
-        } catch (FileShufflerException e) {
+        } catch (FileShufflingException e) {
             e.printStackTrace();
         }
     }
