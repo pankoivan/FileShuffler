@@ -6,12 +6,15 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
+import java.util.function.Predicate;
 
 public class FileShuffler {
 
     private final SettingsParser settingsParser;
 
     private final List<File> files;
+
+    private final int initialSize;
 
     private final String formatPattern;
 
@@ -22,8 +25,11 @@ public class FileShuffler {
     public FileShuffler(SettingsParser settingsParser) throws FileShufflingException {
         try {
             this.settingsParser = settingsParser;
+
             files = new ArrayList<>(Arrays.asList(Objects.requireNonNull(
                     new File(this.settingsParser.getSourceDir()).listFiles())));
+            initialSize = files.size();
+
             formatPattern = "%0" + String.valueOf(files.size()).length() + "d";
             
         } catch (NullPointerException e) {
@@ -34,9 +40,13 @@ public class FileShuffler {
     public void shuffle() throws FileShufflingException {
         try {
             createDestDirectoryIfNecessary();
-            excludeUnnecessary();
+            removeIfNecessary();
             cyclicShuffle();
             moveOrRename();
+
+            System.out.println("\n\n\nПереименовано файлов: " + files.size());
+            System.out.println("Удалено файлов: " + (initialSize - files.size()));
+
         } catch (DirectoryCreationException | IOException e) {
             throw new FileShufflingException("File shuffler cannot shuffle files because of errors", e);
         }
@@ -53,12 +63,29 @@ public class FileShuffler {
         }
     }
 
-    private void excludeUnnecessary() {
-        removeAll();
+    private void removeIfNecessary() throws IOException {
+        if (settingsParser.isWithExtensions()) {
+            if (settingsParser.isExcluded()) {
+                remove(file -> settingsParser.getExtensions().contains(getExtension(file)));
+            } else {
+                remove(file -> !settingsParser.getExtensions().contains(getExtension(file)));
+            }
+        }
     }
 
-    private void removeAll() {
-        files.removeIf(file -> settingsParser.getExcludedFormats().contains(getExtension(file)));
+    private void remove(Predicate<File> predicate) throws IOException {
+
+        Iterator<File> iterator = files.iterator();
+        while (iterator.hasNext()) {
+
+            File current = iterator.next();
+            if (predicate.test(current)) {
+
+                System.out.println(current.getName() + "   ----->   DELETED");
+                Files.delete(current.toPath());
+                iterator.remove();
+            }
+        }
     }
 
     private void cyclicShuffle() {

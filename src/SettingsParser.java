@@ -3,6 +3,7 @@ import exceptions.SettingsParsingException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -16,7 +17,11 @@ public class SettingsParser {
 
     private final int shufflesCount;
 
-    private List<String> excludedFormats;
+    private boolean isWithExtensions;
+
+    private boolean isExcluded;
+
+    private List<String> extensions;
 
     public SettingsParser() throws SettingsParsingException {
         this(SETTINGS);
@@ -30,8 +35,10 @@ public class SettingsParser {
             destDir = lines.get(1);
             shufflesCount = Integer.parseInt(lines.get(2));
 
-            if (lines.size() == 4) {
-                excludedFormats = getProcessedExcludedFormats(lines.get(3));
+            if (lines.size() == 5) {
+                isWithExtensions = true;
+                isExcluded = getExtensionsStatus(lines.get(3));
+                extensions = getProcessedExtensions(lines.get(4));
             }
 
         } catch (IOException | NullPointerException | NumberFormatException e) {
@@ -48,8 +55,12 @@ public class SettingsParser {
                 .toList();
     }
 
-    private List<String> getProcessedExcludedFormats(String formats) {
-        return Stream.of(formats.split(" "))
+    private boolean getExtensionsStatus(String line) {
+        return line.equalsIgnoreCase("excluded");
+    }
+
+    private List<String> getProcessedExtensions(String line) {
+        return Stream.of(line.split(" "))
                 .filter(format -> !format.isBlank())
                 .toList();
     }
@@ -66,8 +77,16 @@ public class SettingsParser {
         return shufflesCount;
     }
 
-    public List<String> getExcludedFormats() {
-        return excludedFormats;
+    public boolean isWithExtensions() {
+        return isWithExtensions;
+    }
+
+    public boolean isExcluded() {
+        return isExcluded;
+    }
+
+    public List<String> getExtensions() {
+        return extensions;
     }
 
 }
