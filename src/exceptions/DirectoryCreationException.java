@@ -10,8 +10,8 @@ public class DirectoryCreationException extends Exception {
         super(msg);
     }
 
-    public DirectoryCreationException(String msg, Throwable throwable) {
-        super(msg, throwable);
+    public DirectoryCreationException(String msg, Throwable cause) {
+        super(msg, cause);
     }
 
 }

@@ -1,9 +1,10 @@
-import exceptions.SettingsParsingException;
+import exceptions.SettingsParserException;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class SettingsParser {
@@ -18,38 +19,34 @@ public class SettingsParser {
 
     private boolean isWithExtensions;
 
-    private boolean isExcluded;
+    private boolean isExcludedExtensions;
 
     private List<String> extensions;
 
-    public SettingsParser() throws SettingsParsingException {
+    public SettingsParser() throws SettingsParserException {
         this(SETTINGS);
     }
 
-    public SettingsParser(String path) throws SettingsParsingException {
+    public SettingsParser(String path) throws SettingsParserException {
         try {
             List<String> lines = getProcessedSettingsLines(path);
-
             sourceDir = lines.get(0);
             destDir = lines.get(1);
             shufflesCount = Integer.parseInt(lines.get(2));
-
             if (lines.size() == 5) {
                 isWithExtensions = true;
-                isExcluded = getExtensionsStatus(lines.get(3));
+                isExcludedExtensions = getExtensionsStatus(lines.get(3));
                 extensions = getProcessedExtensions(lines.get(4));
             }
-
         } catch (IOException | NullPointerException | NumberFormatException e) {
-            throw new SettingsParsingException("Settings cannot be created because of errors in settings file " +
-                    "\"" + path + "\"", e);
+            throw new SettingsParserException("Содержимое настроечного файла \"%s\" не может быть правильно распознано".formatted(path), e);
         }
     }
 
     private List<String> getProcessedSettingsLines(String path) throws IOException {
         return Files.readAllLines(Paths.get(path))
                 .stream()
-                .filter(line -> !line.isBlank())
+                .filter(Predicate.not(String::isBlank))
                 .map(String::trim)
                 .toList();
     }
@@ -60,7 +57,7 @@ public class SettingsParser {
 
     private List<String> getProcessedExtensions(String line) {
         return Stream.of(line.split(" "))
-                .filter(format -> !format.isBlank())
+                .filter(Predicate.not(String::isBlank))
                 .map(String::toLowerCase)
                 .toList();
     }
@@ -81,8 +78,8 @@ public class SettingsParser {
         return isWithExtensions;
     }
 
-    public boolean isExcluded() {
-        return isExcluded;
+    public boolean isExcludedExtensions() {
+        return isExcludedExtensions;
     }
 
     public List<String> getExtensions() {
