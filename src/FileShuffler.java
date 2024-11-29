@@ -41,7 +41,7 @@ public class FileShuffler {
             removeFilesIfNecessary();
             shuffleFilesInLoop();
             moveOrRenameFiles();
-            System.out.println("\n\n\nПереименовано файлов: " + files.size());
+            System.out.println("\n\nПереименовано файлов: " + files.size());
             System.out.println("Удалено файлов: " + (initialSize - files.size()));
         } catch (DirectoryCreationException | IOException e) {
             throw new FileShufflerException("Файлы не могут быть правильно перемешаны", e);
@@ -60,14 +60,14 @@ public class FileShuffler {
     private void removeFilesIfNecessary() throws IOException {
         if (settingsParser.isWithExtensions()) {
             if (settingsParser.isExcludedExtensions()) {
-                removeFile(file -> settingsParser.getExtensions().contains(getFileExtensionInLowerCase(file)));
+                removeFilesByPredicate(file -> settingsParser.getExtensions().contains(getFileExtensionInLowerCase(file)));
             } else {
-                removeFile(file -> !settingsParser.getExtensions().contains(getFileExtensionInLowerCase(file)));
+                removeFilesByPredicate(file -> !settingsParser.getExtensions().contains(getFileExtensionInLowerCase(file)));
             }
         }
     }
 
-    private void removeFile(Predicate<File> predicate) throws IOException {
+    private void removeFilesByPredicate(Predicate<File> predicate) throws IOException {
         Iterator<File> iterator = files.iterator();
         while (iterator.hasNext()) {
             File current = iterator.next();
@@ -88,31 +88,30 @@ public class FileShuffler {
     private void moveOrRenameFiles() throws IOException {
         for (int i = 0; i < files.size(); ++i) {
             String sourceName = files.get(i).getName();
-            String destName = String.format(formatPattern, i + 1) + " " + originalFilenameOrUndefined(files.get(i));
+            String destName = String.format(formatPattern, i + 1) + " " + getOriginalFilenameOrDefault(files.get(i));
             Files.move(
-                    Paths.get(settingsParser.getSourceDir() + "\\" + sourceName),
-                    Paths.get(settingsParser.getDestDir() + "\\" + destName),
+                    Paths.get(settingsParser.getSourceDir(), sourceName),
+                    Paths.get(settingsParser.getDestDir(), destName),
                     StandardCopyOption.REPLACE_EXISTING
             );
             System.out.println(sourceName + "   ----->   " + destName);
         }
     }
 
-    private String originalFilenameOrUndefined(File file) {
+    private String getOriginalFilenameOrDefault(File file) {
         StringBuilder stringBuilder = new StringBuilder(file.getName());
-        String extension = getFileExtensionInLowerCase(file);
-        while (!Character.isAlphabetic(stringBuilder.charAt(0))) {
+        String extension = "." + getFileExtensionInLowerCase(file);
+        while (Character.isDigit(stringBuilder.charAt(0)) || Character.isWhitespace(stringBuilder.charAt(0))) {
             stringBuilder.deleteCharAt(0);
         }
         if (stringBuilder.toString().equalsIgnoreCase(extension)) {
-            stringBuilder = new StringBuilder("Undefined file " + UUID.randomUUID() + "." + extension);
+            stringBuilder = new StringBuilder("default" + extension);
         }
         return stringBuilder.toString();
     }
 
     private String getFileExtensionInLowerCase(File file) {
-        String name = file.getName();
-        return name.substring(name.lastIndexOf(".") + 1).toLowerCase();
+        return file.getName().substring(file.getName().lastIndexOf(".") + 1).toLowerCase();
     }
 
 }
