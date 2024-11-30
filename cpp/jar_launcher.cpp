@@ -1,11 +1,9 @@
 #include <iostream>
 
-using std::cout;
-
-int main()
-{
+int main() {
+	setlocale(LC_ALL, "Russian");
 	system("java -jar file_shuffler.jar");
-	cout << "\n\n\nJava program \"file_shuffler.jar\" has finished its work\n\n\n";
+	std::cout << "\n\nПрограмма завершила свою работу\n\n";
 	system("pause");
 	return 0;
 }
